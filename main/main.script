@@ -1,0 +1,69 @@
+local maze_values = {
+	"up", "left", "right", "up",
+	"left", "up", "empty", "right",
+	"up", "up", "left", "up",
+	"right", "right", "right", "exit"
+}
+
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+
+	self.maze = {}
+
+	local sprite_size = 120
+	local offset_y = 300
+	local offset_x = 20
+	
+	local width = 640
+	local height = 640
+
+	
+
+	local arrow_width_count = 4
+	local arrow_height_count = 4
+
+	local step_x = width / arrow_width_count
+	local step_y = height / arrow_height_count
+
+
+	local index = 1;
+
+	for h = 0, height - step_y, step_y do 
+		for w = 0, width - step_x, step_x do 
+			local posx = w + (sprite_size / 2) + offset_x
+			local posy = h + (sprite_size / 2) + offset_y
+
+			local maze_value = maze_values[index]
+
+			local new_go 
+
+			local pos = vmath.vector3(posx, posy, 0)
+
+			local factory_options = {
+				direction = hash(maze_values[index]),
+				x  = w + offset_x, 
+				y = h + offset_y
+			}
+			
+			if maze_value == "exit" then
+				new_go = factory.create("#exit", pos, nil, factory_options)
+			elseif maze_value == "empty" then
+				
+			else
+				new_go = factory.create("#arrow", pos, nil, factory_options)
+			end
+			table.insert(self.maze, new_go)
+			index = index + 1
+		end
+	end
+end
+
+function on_input(self, action_id, action)
+	if action_id == hash("touch") and action.pressed then
+		for _, value in ipairs(self.maze) do
+			msg.post(value, "touch", { x = action.x, y = action.y })	
+		end
+	end
+end

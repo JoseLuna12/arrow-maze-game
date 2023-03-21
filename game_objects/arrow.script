@@ -1,0 +1,133 @@
+-- 0 up
+-- 1 left
+-- 2 down
+-- 3 right
+go.property("direction", hash("up"))
+go.property("x", 0)
+go.property("y", 0)
+go.property("was_moved", false)
+go.property("is_gone", false)
+
+local sprite_size = 120
+
+function init(self)
+	msg.post("@render:", "use_fixed_fit_projection", { near = -1, far = 1 })
+
+	local rotation = go.get_rotation()
+
+	if (self.direction == hash("left") ) then
+		rotation = rotation * vmath.quat_rotation_z(math.pi / 2)
+	elseif (self.direction == hash("down") ) then
+		rotation = rotation * vmath.quat_rotation_z((math.pi / 2) * 2)
+	elseif (self.direction == hash("right") ) then
+		rotation = rotation * vmath.quat_rotation_z((math.pi / 2) * 3)
+	end
+
+	go.set_rotation(rotation)
+	
+end
+
+function final(self)
+	-- Add finalization code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+end
+
+function update(self, dt)
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+	-- if (self.is_gone) then
+		-- go.set(".", "", value)
+		
+end
+
+function fixed_update(self, dt)
+	-- This function is called if 'Fixed Update Frequency' is enabled in the Engine section of game.project
+	-- Can be coupled with fixed updates of the physics simulation if 'Use Fixed Timestep' is enabled in Physics section of game.project
+	-- Add update code here
+	-- Learn more: https://defold.com/manuals/script/
+	-- Remove this function if not needed
+	
+end
+
+function touch_action(self)
+		local current_position = go.get_position()
+		local translation_value = sprite_size + 30
+		-- self.was_moved = true
+
+		if (self.direction == hash("up") ) then
+
+			local new_pos = current_position.y + translation_value
+			go.animate(".", "position.y", go.PLAYBACK_ONCE_FORWARD, new_pos , go.EASING_OUTQUAD, 0.5)
+			
+		elseif (self.direction == hash("left")) then
+
+			local new_pos = current_position.x - translation_value
+			go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD, new_pos , go.EASING_OUTQUAD, 0.5)
+			
+		elseif (self.direction == hash("down")) then
+
+			local new_pos = current_position.y - translation_value
+			go.animate(".", "position.y", go.PLAYBACK_ONCE_FORWARD, new_pos , go.EASING_OUTQUAD, 0.5)
+
+		elseif (self.direction == hash("right")) then
+
+			local new_pos = current_position.x + translation_value
+			go.animate(".", "position.x", go.PLAYBACK_ONCE_FORWARD, new_pos , go.EASING_OUTQUAD, 0.5)
+			
+		end
+		local new_position = go.get_position()
+		self.x = new_position.x + sprite_size /2
+		self.y = new_position.y + sprite_size /2
+	end
+
+function did_touch(self, message) 
+	local x = self.x
+	local y = self.y
+	if message.x < x + sprite_size and message.x > x and  message.y < y + sprite_size and message.y > y then
+		return true
+	end
+end 
+
+function on_message(self, message_id, message, sender)
+	if message_id == hash("touch") then
+		if did_touch(self, message) and self.was_moved == false then
+			touch_action(self)
+		end
+	end
+	
+	if message_id == hash("collision_response") then
+		if message.other_group == hash("arrow") then
+			print("collision with" .. message.other_id)	
+		end
+		
+		if message.other_group == hash("exit") then
+			local other_pos = go.get_position(message.other_id)
+			msg.post(".", "exit_arrow", {new_pos = other_pos})
+			pprint(message)
+		end
+		
+	end
+
+	if message_id == hash("exit_arrow") then
+		self.is_gone = true
+		msg.post(".", "disable")
+		local new_pos = message.new_pos
+		pprint(message)
+	end
+end
+
+function on_input(self, action_id, action)
+	-- if action_id == hash("touch") and action.pressed then
+	-- 	if self.id == action.id then
+	-- 		print("Touch! " .. self.direction)
+	-- 	end
+	-- end
+end
+
+function on_reload(self)
+	-- Add reload-handling code here
+	-- Learn more: https://defold.com/manuals/hot-reload/
+	-- Remove this function if not needed
+end
